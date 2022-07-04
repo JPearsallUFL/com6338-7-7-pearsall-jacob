@@ -52,75 +52,101 @@ var questionsArr = [
   ]
 
 var quiz = document.getElementById('quiz')
-var score = localStorage.getItem('score')
-var text = document.createElement("p")
-text.textContent ="Previous score: " + score  + "%"
-var startButton = document.createElement("button")
-startButton.id = "start-quiz"
-startButton.textContent = "Start Quiz!"
-var div = document.createElement("div")
-var tempScore = 0
-// var btn_option = document.getElementsByClassName("clicked")
-var button
-var answer
+var score = 0
+var currentQuestion = 0 
+var timeRemaining
+var timerID
 
+quiz.onclick = function(e){
+    if(e.target.id === 'start-quiz') {
+        drawQuestion()
+    }
+    else if(e.target.parentElement.id === 'choices' && e.target.tagName === 'BUTTON'){
+        if(e.target.textContent === questionsArr[currentQuestion].answer){
+            score++
+        }
+        clearInterval(timerID)
+        currentQuestion++
 
-
-//Set Start Quiz Button and text if have played before
-if (score){
-    quiz.appendChild(text)
-    quiz.appendChild(startButton)
-
-} else {
-    quiz.appendChild(startButton)
-}
-
-//Display questions
-startButton.onclick = function(){
-    quiz.innerHTML = ""
-    for (i = 0; i < questionsArr.length; i++){
-        text.textContent = questionsArr[i].question
-        answer = questionsArr[i].answer
-        quiz.appendChild(text)
-        quiz.appendChild(div)
-        question(i)
-        console.log(answer)
-        btn_option.onclick = function(){
-            correct(answer)
+        if(currentQuestion < questionsArr.length){
+            drawQuestion()
+        }
+        else {
+            endGame()
         }
     }
 }
 
-//function for question
-function question(a){
-    for(i =  0; i < questionsArr[a].options.length; i++){
-        button = document.createElement("button")
-        button.textContent = questionsArr[a].options[i]
-        // button.onclick(i)
-        div.appendChild(button)
-    }
-    // btn_option = div.querySelectorAll("button")
-    // console.log(btn_option)
-    // console.log(btn_option)
-    // btn_option = document.getElementsByClassName("clicked")
-    // btn_option.onclick = correct
+function gameStart(){
+    score = 0
+    currentQuestion = 0
+    quiz.innerHTML = ""
+    var previousScore = localStorage.getItem('previous-score')
 
-    // btn_option.onclick = correct
-    // console.log(btn_option)
+    if(previousScore){
+        var previousScoreDisplay = document.createElement('p')
+        previousScoreDisplay.textContent = "Previous score: " + previousScore
+        quiz.appendChild(previousScoreDisplay)
+    }
+    
+    var startButton = document.createElement('button')
+    startButton.id = 'start-quiz'
+    startButton.textContent = 'Start Quiz!'
+    quiz.appendChild(startButton)
 }
 
-//function to check if correct
-// btn_option.addEventListener("click", function(e){
-//     if (e.target.textContent === "South America"){
-//         console.log(ha)
-//     }
-// })
+function drawQuestion(){
+    var questionObj = questionsArr[currentQuestion]
+    quiz.innerHTML = ""
 
-function correct(a) {
-    if (a.textContent === this.textContent){
-        tempScore++
-        console.log(tempScore)
-    } else{
-        console.log("blah")
-    }
+    var questionText = document.createElement('p')
+    questionText.textContent = questionObj.question
+    quiz.appendChild(questionText)
+
+    var choices = document.createElement('div')
+    choices.id = 'choices'
+    quiz.appendChild(choices)
+
+    questionObj.options.forEach(function(choice){
+        var btn = document.createElement('button')
+        btn.textContent = choice
+        choices.appendChild(btn)
+    })
+
+    timeRemaining = 30
+    var timer = document.createElement('p')
+    timer.id = 'timer'
+    timer.textContent = timeRemaining
+    quiz.appendChild(timer)
+    startTimer()
 }
+
+function startTimer(){
+    var timer = document.getElementById('timer')
+    timerID = setInterval(function(){
+        timeRemaining--
+
+        if(timeRemaining >= 0){
+            timer.textContent = timeRemaining
+        }
+        else {
+            clearInterval(timerID)
+            currentQuestion++
+            if(currentQuestion < questionsArr.length){
+                drawQuestion()
+            }
+            else{
+                endGame()
+            }
+        }
+    },1000)
+}
+
+function endGame(){
+    quiz.innerHTML = ""
+    var percentage = Math.round(score / questionsArr.length * 100) + "%"
+    localStorage.setItem('previous-score', percentage)
+    gameStart()
+}
+
+gameStart()
